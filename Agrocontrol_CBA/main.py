@@ -19,12 +19,12 @@ movimientos = {}
 ventas = {}
 
 def cargar_datos():
-    """Carga todos los datos desde los archivos JSON en la carpeta data/."""
+    """Carga todos los datos desde los archivos JSON en la carpeta data/ con manejo seguro de archivos vacíos."""
     global productos, lotes, movimientos, ventas
     
     # Productos
     try:
-        if FILE_PRODUCTOS.exists():
+        if FILE_PRODUCTOS.exists() and FILE_PRODUCTOS.stat().st_size > 0:
             with open(FILE_PRODUCTOS, "r", encoding="utf-8") as f:
                 productos = json.load(f)
     except Exception as e:
@@ -33,7 +33,7 @@ def cargar_datos():
 
     # Lotes
     try:
-        if FILE_LOTES.exists():
+        if FILE_LOTES.exists() and FILE_LOTES.stat().st_size > 0:
             with open(FILE_LOTES, "r", encoding="utf-8") as f:
                 lotes = json.load(f)
     except Exception as e:
@@ -42,7 +42,7 @@ def cargar_datos():
 
     # Movimientos
     try:
-        if FILE_MOVIMIENTOS.exists():
+        if FILE_MOVIMIENTOS.exists() and FILE_MOVIMIENTOS.stat().st_size > 0:
             with open(FILE_MOVIMIENTOS, "r", encoding="utf-8") as f:
                 movimientos = json.load(f)
     except Exception as e:
@@ -51,7 +51,7 @@ def cargar_datos():
 
     # Ventas
     try:
-        if FILE_VENTAS.exists():
+        if FILE_VENTAS.exists() and FILE_VENTAS.stat().st_size > 0:
             with open(FILE_VENTAS, "r", encoding="utf-8") as f:
                 ventas = json.load(f)
     except Exception as e:
@@ -467,7 +467,7 @@ def consultar_ventas():
         for vid, v in ventas.items():
             print(f"Venta ID: {vid} | Fecha: {v['fecha']} | Total: ${v['total']:.2f}")
             for item in v['items']:
-                # Usar .get() previene el KeyError si el ítem antiguo no tiene 'subtotal'
+                # MEJORA APLICADA: Uso de .get() para evitar caídas si el JSON es antiguo y no tiene 'subtotal'
                 subtotal_item = item.get('subtotal', item['cantidad'] * item['precio_unitario'])
                 print(f"    -> Producto: {item['codigo']} | Cantidad: {item['cantidad']} | Precio U: ${item['precio_unitario']:.2f} | Subtotal: ${subtotal_item:.2f}")
 
