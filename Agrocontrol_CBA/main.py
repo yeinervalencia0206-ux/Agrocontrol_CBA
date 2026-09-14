@@ -213,3 +213,102 @@ def menu_gestion_productos():
             break
         else:
             print(Fore.RED + "Opción inválida.")
+            
+def menu_gestion_lotes():
+    while True:
+        print(Fore.YELLOW + Style.BRIGHT + "\n--- GESTIÓN DE LOTES PRODUCTIVOS ---" + Style.RESET_ALL)
+        print("1. Registrar lote")
+        print("2. Consultar lotes")
+        print("3. Registrar proceso de cosecha")
+        print("0. Volver al menú principal")
+        
+        opcion = input("Seleccione una opción: ").strip()
+        
+        if opcion == "1":
+            id_lote = input("Identificador del lote (ej. L001): ").strip().upper()
+            if not id_lote:
+                print(Fore.RED + "El ID no puede estar vacío.")
+                continue
+            if id_lote in lotes:
+                print(Fore.RED + "El lote ya existe.")
+                continue
+                
+            prod_cod = input("Código del producto asociado: ").strip().upper()
+            if prod_cod not in productos or not productos[prod_cod]['activo']:
+                print(Fore.RED + "El producto no existe o está inactivo (RF05).")
+                continue
+                
+            fecha_siembra = input("Fecha de siembra (YYYY-MM-DD): ").strip()
+            try:
+                datetime.strptime(fecha_siembra, "%Y-%m-%d")
+            except ValueError:
+                print(Fore.RED + "Formato de fecha inválido. Use YYYY-MM-DD.")
+                continue
+                
+            try:
+                area_m2 = float(input("Área en metros cuadrados (m2): "))
+                if area_m2 <= 0:
+                    print(Fore.RED + "El área debe ser mayor a 0.")
+                    continue
+                
+                lotes[id_lote] = {
+                    "id_lote": id_lote,
+                    "producto_codigo": prod_cod,
+                    "fecha_siembra": fecha_siembra,
+                    "area_m2": area_m2,
+                    "cantidad_producida": 0,
+                    "estado": "EN_PRODUCCION"
+                }
+                guardar_datos()
+                print(Fore.GREEN + "¡Lote registrado exitosamente (RF05)! Estado: EN_PRODUCCION.")
+            except ValueError:
+                print(Fore.RED + "Ingrese un valor numérico válido para el área.")
+                
+        elif opcion == "2":
+            print(Fore.CYAN + "\n--- LOTES PRODUCTIVOS ---")
+            if not lotes:
+                print("No hay lotes registrados.")
+            else:
+                for lid, l in lotes.items():
+                    print(f"Lote: {lid} | Producto: {l['producto_codigo']} | Siembra: {l['fecha_siembra']} | Área: {l['area_m2']}m2 | Prod: {l['cantidad_producida']} | Estado: {l['estado']}")
+                    
+        elif opcion == "3":
+            id_lote = input("Ingrese el ID del lote a cosechar: ").strip().upper()
+            if id_lote not in lotes:
+                print(Fore.RED + "El lote no existe (PF003).")
+                continue
+            lote = lotes[id_lote]
+            if lote['estado'] != "EN_PRODUCCION":
+                print(Fore.RED + f"El lote ya se encuentra en estado '{lote['estado']}' y no puede cosecharse de nuevo (PF004, Regla 5).")
+                continue
+                
+            try:
+                cantidad_cosechada = int(input("Ingrese la cantidad producida en la cosecha: "))
+                if cantidad_cosechada <= 0:
+                    print(Fore.RED + "La cantidad debe ser mayor a 0.")
+                    continue
+                
+                lote['cantidad_producida'] = cantidad_cosechada
+                lote['estado'] = "COSECHADO"
+                
+                # Generar automáticamente una entrada de inventario (RF07)
+                m_id = generar_id_movimiento()
+                fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M")
+                movimientos[m_id] = {
+                    "id": m_id,
+                    "producto_codigo": lote['producto_codigo'],
+                    "tipo": "ENTRADA",
+                    "cantidad": cantidad_cosechada,
+                    "motivo": f"Cosecha lote {id_lote}",
+                    "fecha": fecha_actual
+                }
+                
+                guardar_datos()
+                print(Fore.GREEN + f"¡Lote {id_lote} cosechado con éxito! Se generó la entrada de inventario {m_id} (RF07).")
+            except ValueError:
+                print(Fore.RED + "Ingrese un número entero válido.")
+                
+        elif opcion == "0":
+            break
+        else:
+            print(Fore.RED + "Opción inválida.")
