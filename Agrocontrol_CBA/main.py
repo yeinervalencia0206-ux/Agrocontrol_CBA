@@ -77,3 +77,24 @@ def guardar_datos():
         print(Fore.GREEN + "¡Datos guardados exitosamente en formato JSON!")
     except Exception as e:
         print(Fore.RED + f"Error al guardar los datos: {e}")
+        
+def calcular_stock(codigo_producto):
+    """Calcula el stock actual a partir de los movimientos registrados (Regla de negocio 3)."""
+    stock = 0
+    for mov in movimientos.values():
+        if mov["producto_codigo"] == codigo_producto:
+            if mov["tipo"] == "ENTRADA":
+                stock += mov["cantidad"]
+            elif mov["tipo"] == "SALIDA":
+                stock -= mov["cantidad"]
+    return stock
+
+def generar_id_movimiento():
+    """Genera un identificador secuencial para los movimientos, ej. M0001."""
+    nuevo_num = len(movimientos) + 1
+    return f"M{nuevo_num:04d}"
+
+def generar_id_venta():
+    """Genera un identificador secuencial para las ventas, ej. V0001."""
+    nuevo_num = len(ventas) + 1
+    return f"V{nuevo_num:04d}"
