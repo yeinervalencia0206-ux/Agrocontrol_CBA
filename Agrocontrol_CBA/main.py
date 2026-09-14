@@ -142,6 +142,7 @@ def menu_gestion_productos():
                     "categoria": categoria,
                     "unidad": unidad,
                     "precio": precio,
+                    "stock_inicial": stock_inicial,
                     "stock_minimo": stock_minimo,
                     "activo": True
                 }

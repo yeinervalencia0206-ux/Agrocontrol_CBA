@@ -16,5 +16,24 @@
         "precio": 2000.0,
         "stock_minimo": 2,
         "activo": true
+    },
+    "P012": {
+        "codigo": "P012",
+        "nombre": "pollo",
+        "categoria": "pollo",
+        "unidad": "l",
+        "precio": 2000.0,
+        "stock_minimo": 3,
+        "activo": true
+    },
+    "P013": {
+        "codigo": "P013",
+        "nombre": "pollo2",
+        "categoria": "pollo2",
+        "unidad": "kg",
+        "precio": 23333.0,
+        "stock_inicial": 5,
+        "stock_minimo": 1,
+        "activo": true
     }
 }
