@@ -467,7 +467,8 @@ def consultar_ventas():
         for vid, v in ventas.items():
             print(f"Venta ID: {vid} | Fecha: {v['fecha']} | Total: ${v['total']:.2f}")
             for item in v['items']:
-                print(f"    -> Producto: {item['codigo']} | Cantidad: {item['cantidad']} | Precio U: ${item['precio_unitario']:.2f} | Subtotal: ${item['subtotal']:.2f}")
+                subtotal_item = item.get('subtotal', item['cantidad'] * item['precio_unitario'])
+                print(f"    -> Producto: {item['codigo']} | Cantidad: {item['cantidad']} | Precio U: ${item['precio_unitario']:.2f} | Subtotal: ${subtotal_item:.2f}")
 
 def alertas_stock():
     print("\n--- ALERTAS DE STOCK BAJO (RF12) ---")
