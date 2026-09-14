@@ -312,3 +312,66 @@ def menu_gestion_lotes():
             break
         else:
             print(Fore.RED + "Opción inválida.")
+            
+def menu_movimientos_inventario():
+    while True:
+        print(Fore.YELLOW + Style.BRIGHT + "\n--- MOVIMIENTOS DE INVENTARIO ---" + Style.RESET_ALL)
+        print("1. Registrar entrada manual")
+        print("2. Registrar salida manual")
+        print("3. Ver historial de movimientos")
+        print("0. Volver al menú principal")
+        
+        opcion = input("Seleccione una opción: ").strip()
+        
+        if opcion == "1" or opcion == "2":
+            tipo = "ENTRADA" if opcion == "1" else "SALIDA"
+            prod_cod = input("Código del producto: ").strip().upper()
+            if prod_cod not in productos:
+                print(Fore.RED + "El producto no existe.")
+                continue
+            
+            try:
+                cantidad = int(input("Cantidad: "))
+                if cantidad <= 0:
+                    print(Fore.RED + "La cantidad debe ser mayor a 0.")
+                    continue
+                
+                # Validar stock para salidas (RF09)
+                if tipo == "SALIDA":
+                    stock_actual = calcular_stock(prod_cod)
+                    if stock_actual < cantidad:
+                        print(Fore.RED + f"Stock insuficiente (Stock disponible: {stock_actual}). No se puede realizar la salida (PF005, Regla 4).")
+                        continue
+                        
+                motivo = input("Motivo obligatorio del movimiento: ").strip()
+                if not motivo:
+                    print(Fore.RED + "El motivo es obligatorio (RF08).")
+                    continue
+                
+                m_id = generar_id_movimiento()
+                fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M")
+                movimientos[m_id] = {
+                    "id": m_id,
+                    "producto_codigo": prod_cod,
+                    "tipo": tipo,
+                    "cantidad": cantidad,
+                    "motivo": motivo,
+                    "fecha": fecha_actual
+                }
+                guardar_datos()
+                print(Fore.GREEN + f"¡Movimiento {m_id} registrado con éxito!")
+            except ValueError:
+                print(Fore.RED + "Ingrese una cantidad numérica válida.")
+                
+        elif opcion == "3":
+            print(Fore.CYAN + "\n--- HISTORIAL DE MOVIMIENTOS ---")
+            if not movimientos:
+                print("No hay movimientos registrados.")
+            else:
+                for mid, m in movimientos.items():
+                    print(f"[{m['id']}] {m['fecha']} | {m['tipo']} | Prod: {m['producto_codigo']} | Cant: {m['cantidad']} | Motivo: {m['motivo']}")
+                    
+        elif opcion == "0":
+            break
+        else:
+            print(Fore.RED + "Opción inválida.")
