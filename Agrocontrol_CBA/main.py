@@ -467,6 +467,7 @@ def consultar_ventas():
         for vid, v in ventas.items():
             print(f"Venta ID: {vid} | Fecha: {v['fecha']} | Total: ${v['total']:.2f}")
             for item in v['items']:
+                # Usar .get() previene el KeyError si el ítem antiguo no tiene 'subtotal'
                 subtotal_item = item.get('subtotal', item['cantidad'] * item['precio_unitario'])
                 print(f"    -> Producto: {item['codigo']} | Cantidad: {item['cantidad']} | Precio U: ${item['precio_unitario']:.2f} | Subtotal: ${subtotal_item:.2f}")
 
