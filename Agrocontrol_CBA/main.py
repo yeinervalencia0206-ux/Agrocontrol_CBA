@@ -453,3 +453,71 @@ def consultar_ventas():
             print(f"Venta ID: {vid} | Fecha: {v['fecha']} | Total: ${v['total']}")
             for item in v['items']:
                 print(f"   -> Producto: {item['codigo']} | Cantidad: {item['cantidad']} | Precio U: ${item['precio_unitario']}")
+def alertas_stock():
+    print(Fore.CYAN + "\n--- ALERTAS DE STOCK BAJO (RF12) ---")
+    alerta_encontrada = False
+    for cod, p in productos.items():
+        if p['activo']:
+            stock_actual = calcular_stock(cod)
+            if stock_actual <= p['stock_minimo']:
+                print(Fore.RED + f"¡ALERTA! Producto '{p['nombre']}' ({cod}) tiene stock bajo. Actual: {stock_actual} | Mínimo: {p['stock_minimo']}")
+                alerta_encontrada = True
+    if not alerta_encontrada:
+        print(Fore.GREEN + "Todos los productos activos tienen niveles de stock óptimos.")
+
+def menu_reportes():
+    while True:
+        print(Fore.YELLOW + Style.BRIGHT + "\n--- MÓDULO DE REPORTES ---" + Style.RESET_ALL)
+        print("1. Reporte de existencias y valor del inventario")
+        print("2. Reporte de ventas (Ingresos y unidades)")
+        print("3. Ranking de los 3 productos más vendidos")
+        print("0. Volver al menú principal")
+        
+        opcion = input("Seleccione una opción: ").strip()
+        
+        if opcion == "1":
+            print(Fore.CYAN + "\n--- REPORTE DE INVENTARIO ---")
+            valor_total_inventario = 0.0
+            if not productos:
+                print("No hay productos.")
+            else:
+                for cod, p in productos.items():
+                    stock = calcular_stock(cod)
+                    valor_inventario = stock * p['precio']
+                    valor_total_inventario += valor_inventario
+                    print(f"[{cod}] {p['nombre']} | Stock: {stock} | Precio Venta: ${p['precio']} | Valor Total: ${valor_inventario}")
+                print(Fore.GREEN + f"\nValor total acumulado del inventario a precio de venta: ${valor_total_inventario} (RF13)")
+                
+        elif opcion == "2":
+            print(Fore.CYAN + "\n--- REPORTE DE VENTAS ---")
+            total_ventas_realizadas = len(ventas)
+            unidades_vendidas = 0
+            ingresos_totales = 0.0
+            for v in ventas.values():
+                ingresos_totales += v['total']
+                for item in v['items']:
+                    unidades_vendidas += item['cantidad']
+            print(f"Número total de ventas: {total_ventas_realizadas}")
+            print(f"Unidades totales vendidas: {unidades_vendidas}")
+            print(f"Ingresos totales acumulados: ${ingresos_totales} (RF14)")
+            
+        elif opcion == "3":
+            print(Fore.CYAN + "\n--- RANKING: TOP 3 PRODUCTOS MÁS VENDIDOS --- (RF15)")
+            conteo_productos = {}
+            for v in ventas.values():
+                for item in v['items']:
+                    cod = item['codigo']
+                    conteo_productos[cod] = conteo_productos.get(cod, 0) + item['cantidad']
+                    
+            top_productos = sorted(conteo_productos.items(), key=lambda x: x[1], reverse=True)[:3]
+            if not top_productos:
+                print("No hay suficientes datos de ventas para generar el ranking.")
+            else:
+                for i, (cod, cant) in enumerate(top_productos, 1):
+                    nombre_prod = productos[cod]['nombre'] if cod in productos else cod
+                    print(f"{i}. Producto: {nombre_prod} ({cod}) — Cantidad vendida: {cant} unidades")
+                    
+        elif opcion == "0":
+            break
+        else:
+            print(Fore.RED + "Opción inválida.")
