@@ -125,6 +125,12 @@ def menu_gestion_productos():
                 if precio <= 0:
                     print("El precio debe ser mayor a 0 (RF01).")
                     continue
+                
+                stock_inicial = int(input("Stock inicial del producto: "))
+                if stock_inicial < 0:
+                    print("El stock inicial no puede ser negativo.")
+                    continue
+
                 stock_minimo = int(input("Stock mínimo: "))
                 if stock_minimo < 0:
                     print("El stock mínimo no puede ser negativo (RF01).")
@@ -139,8 +145,22 @@ def menu_gestion_productos():
                     "stock_minimo": stock_minimo,
                     "activo": True
                 }
+
+                # Si el stock inicial es mayor a 0, registramos el movimiento de entrada automático
+                if stock_inicial > 0:
+                    m_id = generar_id_movimiento()
+                    fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M")
+                    movimientos[m_id] = {
+                        "id": m_id,
+                        "producto_codigo": codigo,
+                        "tipo": "ENTRADA",
+                        "cantidad": stock_inicial,
+                        "motivo": "Stock inicial de registro",
+                        "fecha": fecha_actual
+                    }
+
                 guardar_datos()
-                print("¡Producto registrado con éxito!")
+                print("¡Producto registrado con éxito y stock guardado!")
             except ValueError:
                 print("Error: Ingrese valores numéricos válidos (RF18).")
                 

@@ -6,6 +6,15 @@
         "unidad": "34KG",
         "precio": 20000.0,
         "stock_minimo": 2,
+        "activo": false
+    },
+    "P002": {
+        "codigo": "P002",
+        "nombre": "carne2",
+        "categoria": "carne2",
+        "unidad": "kg",
+        "precio": 2000.0,
+        "stock_minimo": 2,
         "activo": true
     }
 }
