@@ -1,5 +1,5 @@
-from datetime import datetime
 import json
+from datetime import datetime
 from pathlib import Path
 
 # Configuración de rutas y archivos según la estructura requerida
@@ -22,6 +22,7 @@ def cargar_datos():
     """Carga todos los datos desde los archivos JSON en la carpeta data/."""
     global productos, lotes, movimientos, ventas
     
+    # Productos
     try:
         if FILE_PRODUCTOS.exists():
             with open(FILE_PRODUCTOS, "r", encoding="utf-8") as f:
@@ -30,6 +31,7 @@ def cargar_datos():
         print(f"Error al cargar productos.json: {e}")
         productos = {}
 
+    # Lotes
     try:
         if FILE_LOTES.exists():
             with open(FILE_LOTES, "r", encoding="utf-8") as f:
@@ -38,6 +40,7 @@ def cargar_datos():
         print(f"Error al cargar lotes.json: {e}")
         lotes = {}
 
+    # Movimientos
     try:
         if FILE_MOVIMIENTOS.exists():
             with open(FILE_MOVIMIENTOS, "r", encoding="utf-8") as f:
@@ -46,6 +49,7 @@ def cargar_datos():
         print(f"Error al cargar movimientos.json: {e}")
         movimientos = {}
 
+    # Ventas
     try:
         if FILE_VENTAS.exists():
             with open(FILE_VENTAS, "r", encoding="utf-8") as f:
@@ -57,7 +61,7 @@ def cargar_datos():
     print("¡Datos cargados correctamente desde la carpeta data/!")
 
 def guardar_datos():
-    """Guarda los diccionarios actuales en formato JSON."""
+    """Guarda todos los diccionarios actuales en sus respectivos archivos JSON."""
     try:
         with open(FILE_PRODUCTOS, "w", encoding="utf-8") as f:
             json.dump(productos, f, indent=4, ensure_ascii=False)
@@ -72,7 +76,7 @@ def guardar_datos():
         print(f"Error al guardar los datos: {e}")
         
 def calcular_stock(codigo_producto):
-    """Calcula el stock actual a partir de los movimientos registrados."""
+    """Calcula el stock actual a partir de los movimientos registrados (Regla de negocio 3)."""
     stock = 0
     for mov in movimientos.values():
         if mov["producto_codigo"] == codigo_producto:
@@ -83,10 +87,12 @@ def calcular_stock(codigo_producto):
     return stock
 
 def generar_id_movimiento():
+    """Genera un identificador secuencial para los movimientos, ej. M0001."""
     nuevo_num = len(movimientos) + 1
     return f"M{nuevo_num:04d}"
 
 def generar_id_venta():
+    """Genera un identificador secuencial para las ventas, ej. V0001."""
     nuevo_num = len(ventas) + 1
     return f"V{nuevo_num:04d}"
 
@@ -107,7 +113,7 @@ def menu_gestion_productos():
                 print("El código no puede estar vacío.")
                 continue
             if codigo in productos:
-                print("El producto ya existe.")
+                print("El producto ya existe (RF01).")
                 continue
             
             nombre = input("Nombre del producto: ").strip()
@@ -115,9 +121,9 @@ def menu_gestion_productos():
             unidad = input("Unidad de medida (ej. unidad, kg): ").strip()
             
             try:
-                precio = float(input("Precio unitario de venta: "))
+                precio = float(input("Precio unitario: "))
                 if precio <= 0:
-                    print("El precio debe ser mayor a 0.")
+                    print("El precio debe ser mayor a 0 (RF01).")
                     continue
                 
                 stock_inicial = int(input("Stock inicial del producto: "))
@@ -127,7 +133,7 @@ def menu_gestion_productos():
 
                 stock_minimo = int(input("Stock mínimo: "))
                 if stock_minimo < 0:
-                    print("El stock mínimo no puede ser negativo.")
+                    print("El stock mínimo no puede ser negativo (RF01).")
                     continue
                 
                 productos[codigo] = {
@@ -136,6 +142,7 @@ def menu_gestion_productos():
                     "categoria": categoria,
                     "unidad": unidad,
                     "precio": precio,
+                    "stock_inicial": stock_inicial,
                     "stock_minimo": stock_minimo,
                     "activo": True
                 }
@@ -153,19 +160,25 @@ def menu_gestion_productos():
                     }
 
                 guardar_datos()
-                print("¡Producto registrado con éxito!")
+                print("¡Producto registrado con éxito y stock guardado!")
             except ValueError:
-                print("Error: Ingrese valores numéricos válidos.")
+                print("Error: Ingrese valores numéricos válidos (RF18).")
                 
         elif opcion == "2":
             print("\n--- LISTA DE PRODUCTOS ---")
             if not productos:
                 print("No hay productos registrados.")
             else:
+                filtro = input("Buscar por código o parte del nombre (Enter para ver todos): ").strip().lower()
+                encontrados = False
                 for cod, p in productos.items():
-                    stock_actual = calcular_stock(cod)
-                    estado = "Activo" if p['activo'] else "Inactivo"
-                    print(f"[{p['codigo']}] {p['nombre']} | Cat: {p['categoria']} | Precio: ${p['precio']} | Stock: {stock_actual} | Estado: {estado}")
+                    if not filtro or filtro in cod.lower() or filtro in p['nombre'].lower():
+                        stock_actual = calcular_stock(cod)
+                        estado = "Activo" if p['activo'] else "Inactivo"
+                        print(f"[{p['codigo']}] {p['nombre']} | Cat: {p['categoria']} | Precio: ${p['precio']} | Stock Actual: {stock_actual} | Min: {p['stock_minimo']} | Estado: {estado}")
+                        encontrados = True
+                if not encontrados:
+                    print("No se encontraron productos con ese criterio.")
                     
         elif opcion == "3":
             codigo = input("Ingrese el código del producto a actualizar: ").strip().upper()
@@ -174,7 +187,7 @@ def menu_gestion_productos():
                 continue
             
             p = productos[codigo]
-            print(f"Actualizando producto: {p['nombre']}. Deje en blanco para mantener.")
+            print(f"Actualizando producto: {p['nombre']}. Deje en blanco para mantener el valor actual.")
             
             nuevo_nombre = input(f"Nuevo nombre [{p['nombre']}]: ").strip()
             if nuevo_nombre: p['nombre'] = nuevo_nombre
@@ -182,15 +195,27 @@ def menu_gestion_productos():
             nueva_cat = input(f"Nueva categoría [{p['categoria']}]: ").strip()
             if nueva_cat: p['categoria'] = nueva_cat
             
+            nueva_un = input(f"Nueva unidad [{p['unidad']}]: ").strip()
+            if nueva_un: p['unidad'] = nueva_un
+            
             nuevo_precio = input(f"Nuevo precio [{p['precio']}]: ").strip()
             if nuevo_precio:
                 try:
                     val = float(nuevo_precio)
                     if val > 0: p['precio'] = val
-                except ValueError: print("Valor inválido.")
+                    else: print("Precio inválido, se mantiene el anterior.")
+                except ValueError: print("Valor no numérico, se mantiene el anterior.")
+                
+            nuevo_smin = input(f"Nuevo stock mínimo [{p['stock_minimo']}]: ").strip()
+            if nuevo_smin:
+                try:
+                    val = int(nuevo_smin)
+                    if val >= 0: p['stock_minimo'] = val
+                    else: print("Stock mínimo inválido, se mantiene el anterior.")
+                except ValueError: print("Valor no numérico, se mantiene el anterior.")
                 
             guardar_datos()
-            print("¡Producto actualizado correctamente!")
+            print("¡Producto actualizado correctamente (RF03)!")
             
         elif opcion == "4":
             codigo = input("Ingrese el código del producto a desactivar: ").strip().upper()
@@ -199,7 +224,7 @@ def menu_gestion_productos():
                 continue
             productos[codigo]['activo'] = False
             guardar_datos()
-            print("¡Producto desactivado correctamente!")
+            print("¡Producto desactivado correctamente (RF04)! Se conserva su historial.")
             
         elif opcion == "0":
             break
@@ -218,17 +243,31 @@ def menu_gestion_lotes():
         
         if opcion == "1":
             id_lote = input("Identificador del lote (ej. L001): ").strip().upper()
-            if not id_lote or id_lote in lotes:
-                print("ID inválido o ya existente.")
+            if not id_lote:
+                print("El ID no puede estar vacío.")
                 continue
+            if id_lote in lotes:
+                print("El lote ya existe.")
+                continue
+                
             prod_cod = input("Código del producto asociado: ").strip().upper()
             if prod_cod not in productos or not productos[prod_cod]['activo']:
-                print("El producto no existe o está inactivo.")
+                print("El producto no existe o está inactivo (RF05).")
                 continue
+                
             fecha_siembra = input("Fecha de siembra (YYYY-MM-DD): ").strip()
             try:
                 datetime.strptime(fecha_siembra, "%Y-%m-%d")
+            except ValueError:
+                print("Formato de fecha inválido. Use YYYY-MM-DD.")
+                continue
+                
+            try:
                 area_m2 = float(input("Área en metros cuadrados (m2): "))
+                if area_m2 <= 0:
+                    print("El área debe ser mayor a 0.")
+                    continue
+                
                 lotes[id_lote] = {
                     "id_lote": id_lote,
                     "producto_codigo": prod_cod,
@@ -238,36 +277,57 @@ def menu_gestion_lotes():
                     "estado": "EN_PRODUCCION"
                 }
                 guardar_datos()
-                print("¡Lote registrado exitosamente!")
+                print("¡Lote registrado exitosamente (RF05)! Estado: EN_PRODUCCION.")
             except ValueError:
-                print("Datos ingresados incorrectos.")
+                print("Ingrese un valor numérico válido para el área.")
+                
         elif opcion == "2":
-            for lid, l in lotes.items():
-                print(f"Lote: {lid} | Prod: {l['producto_codigo']} | Siembra: {l['fecha_siembra']} | Estado: {l['estado']}")
+            print("\n--- LOTES PRODUCTIVOS ---")
+            if not lotes:
+                print("No hay lotes registrados.")
+            else:
+                for lid, l in lotes.items():
+                    print(f"Lote: {lid} | Producto: {l['producto_codigo']} | Siembra: {l['fecha_siembra']} | Área: {l['area_m2']}m2 | Prod: {l['cantidad_producida']} | Estado: {l['estado']}")
+                    
         elif opcion == "3":
-            id_lote = input("ID del lote a cosechar: ").strip().upper()
-            if id_lote not in lotes or lotes[id_lote]['estado'] != "EN_PRODUCCION":
-                print("Lote inválido o ya cosechado.")
+            id_lote = input("Ingrese el ID del lote a cosechar: ").strip().upper()
+            if id_lote not in lotes:
+                print("El lote no existe (PF003).")
                 continue
+            lote = lotes[id_lote]
+            if lote['estado'] != "EN_PRODUCCION":
+                print(f"El lote ya se encuentra en estado '{lote['estado']}' y no puede cosecharse de nuevo (PF004, Regla 5).")
+                continue
+                
             try:
-                cant = int(input("Cantidad producida: "))
-                lotes[id_lote]['cantidad_producida'] = cant
-                lotes[id_lote]['estado'] = "COSECHADO"
+                cantidad_cosechada = int(input("Ingrese la cantidad producida en la cosecha: "))
+                if cantidad_cosechada <= 0:
+                    print("La cantidad debe ser mayor a 0.")
+                    continue
+                
+                lote['cantidad_producida'] = cantidad_cosechada
+                lote['estado'] = "COSECHADO"
+                
                 m_id = generar_id_movimiento()
+                fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M")
                 movimientos[m_id] = {
                     "id": m_id,
-                    "producto_codigo": lotes[id_lote]['producto_codigo'],
+                    "producto_codigo": lote['producto_codigo'],
                     "tipo": "ENTRADA",
-                    "cantidad": cant,
+                    "cantidad": cantidad_cosechada,
                     "motivo": f"Cosecha lote {id_lote}",
-                    "fecha": datetime.now().strftime("%Y-%m-%d %H:%M")
+                    "fecha": fecha_actual
                 }
+                
                 guardar_datos()
-                print("¡Cosecha registrada y stock actualizado!")
+                print(f"¡Lote {id_lote} cosechado con éxito! Se generó la entrada de inventario {m_id} (RF07).")
             except ValueError:
-                print("Cantidad inválida.")
+                print("Ingrese un número entero válido.")
+                
         elif opcion == "0":
             break
+        else:
+            print("Opción inválida.")
             
 def menu_movimientos_inventario():
     while True:
@@ -278,36 +338,58 @@ def menu_movimientos_inventario():
         print("0. Volver al menú principal")
         
         opcion = input("Seleccione una opción: ").strip()
-        if opcion in ["1", "2"]:
+        
+        if opcion == "1" or opcion == "2":
             tipo = "ENTRADA" if opcion == "1" else "SALIDA"
             prod_cod = input("Código del producto: ").strip().upper()
             if prod_cod not in productos:
-                print("Producto no existe.")
+                print("El producto no existe.")
                 continue
+            
             try:
-                cant = int(input("Cantidad: "))
-                if tipo == "SALIDA" and calcular_stock(prod_cod) < cant:
-                    print("Stock insuficiente.")
+                cantidad = int(input("Cantidad: "))
+                if cantidad <= 0:
+                    print("La cantidad debe ser mayor a 0.")
                     continue
-                motivo = input("Motivo del movimiento: ").strip()
+                
+                if tipo == "SALIDA":
+                    stock_actual = calcular_stock(prod_cod)
+                    if stock_actual < cantidad:
+                        print(f"Stock insuficiente (Stock disponible: {stock_actual}). No se puede realizar la salida (PF005, Regla 4).")
+                        continue
+                        
+                motivo = input("Motivo obligatorio del movimiento: ").strip()
+                if not motivo:
+                    print("El motivo es obligatorio (RF08).")
+                    continue
+                
                 m_id = generar_id_movimiento()
+                fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M")
                 movimientos[m_id] = {
                     "id": m_id,
                     "producto_codigo": prod_cod,
                     "tipo": tipo,
-                    "cantidad": cant,
+                    "cantidad": cantidad,
                     "motivo": motivo,
-                    "fecha": datetime.now().strftime("%Y-%m-%d %H:%M")
+                    "fecha": fecha_actual
                 }
                 guardar_datos()
-                print("¡Movimiento registrado!")
+                print(f"¡Movimiento {m_id} registrado con éxito!")
             except ValueError:
-                print("Valor numérico inválido.")
+                print("Ingrese una cantidad numérica válida.")
+                
         elif opcion == "3":
-            for mid, m in movimientos.items():
-                print(f"[{m['id']}] {m['fecha']} | {m['tipo']} | Prod: {m['producto_codigo']} | Cant: {m['cantidad']} | Motivo: {m['motivo']}")
+            print("\n--- HISTORIAL DE MOVIMIENTOS ---")
+            if not movimientos:
+                print("No hay movimientos registrados.")
+            else:
+                for mid, m in movimientos.items():
+                    print(f"[{m['id']}] {m['fecha']} | {m['tipo']} | Prod: {m['producto_codigo']} | Cant: {m['cantidad']} | Motivo: {m['motivo']}")
+                    
         elif opcion == "0":
             break
+        else:
+            print("Opción inválida.")
 
 def registrar_venta():
     print("\n--- REGISTRAR VENTA ---")
@@ -318,44 +400,48 @@ def registrar_venta():
         prod_cod = input("Ingrese el código del producto a vender (o escriba 'fin' para terminar): ").strip().upper()
         if prod_cod == 'FIN':
             break
+            
         if prod_cod not in productos or not productos[prod_cod]['activo']:
-            print("Producto no disponible.")
+            print("El producto no existe o está inactivo.")
             continue
+            
         try:
             cantidad = int(input(f"Cantidad de '{productos[prod_cod]['nombre']}': "))
-            if calcular_stock(prod_cod) < cantidad:
-                print("Stock insuficiente.")
+            if cantidad <= 0:
+                print("La cantidad debe ser mayor a 0.")
                 continue
-            
-            precio = productos[prod_cod]['precio']
-            subtotal_item = precio * cantidad
-            total_venta += subtotal_item
+                
+            stock_actual = calcular_stock(prod_cod)
+            if stock_actual < cantidad:
+                print(f"Stock insuficiente. Stock disponible: {stock_actual} (PF005).")
+                continue
+                
+            precio_unitario = productos[prod_cod]['precio']
+            subtotal = precio_unitario * cantidad
             
             items_venta.append({
                 "codigo": prod_cod,
                 "cantidad": cantidad,
-                "precio_unitario": precio
+                "precio_unitario": precio_unitario,
+                "subtotal": subtotal
             })
-            
-            # Muestra el subtotal del ítem y enseguida el total parcial acumulado
-            print(f"Ítem agregado. Subtotal: ${subtotal_item}")
-            print(f"Total parcial acumulado: ${total_venta}")
-            
+            total_venta += subtotal
+            print(f"Ítem agregado. Subtotal: ${subtotal:.2f}")
         except ValueError:
-            print("Cantidad inválida.")
+            print("Ingrese una cantidad numérica válida.")
             
     if not items_venta:
-        print("Venta cancelada.")
+        print("La venta fue cancelada (debe contener al menos un ítem - Regla 6).")
         return
         
     v_id = generar_id_venta()
     fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M")
+    
     ventas[v_id] = {
         "id": v_id,
         "fecha": fecha_actual,
         "items": items_venta,
-        "total": total_venta,
-        "estado": "COMPLETADA"
+        "total": total_venta
     }
     
     for item in items_venta:
@@ -370,88 +456,105 @@ def registrar_venta():
         }
         
     guardar_datos()
-    
-    codigos_items = ", ".join([item['codigo'] for item in items_venta])
-    print(f"\n¡Venta {v_id} registrada con éxito! Total a pagar: ${total_venta} ({codigos_items}).")
+    print(f"\n¡Venta {v_id} registrada con éxito!")
+    print(f"Total a pagar de la venta: ${total_venta:.2f} (RF11, PF006, PF007).")
 
-def consultar_ventas_por_fecha():
-    """Permite consultar ventas filtradas por un rango de fechas (YYYY-MM-DD)."""
-    print("\n--- CONSULTAR VENTAS POR RANGO DE FECHAS ---")
-    f_inicio = input("Fecha de inicio (YYYY-MM-DD): ").strip()
-    f_fin = input("Fecha de fin (YYYY-MM-DD): ").strip()
-
-    try:
-        datetime.strptime(f_inicio, "%Y-%m-%d")
-        datetime.strptime(f_fin, "%Y-%m-%d")
-    except ValueError:
-        print("Formato de fecha inválido. Use YYYY-MM-DD.")
-        return
-
-    encontradas = False
-    print(f"\nResultados entre {f_inicio} y {f_fin}:")
-    for vid, v in ventas.items():
-        fecha_venta = v["fecha"].split(" ")[0]
-        if f_inicio <= fecha_venta <= f_fin:
-            print(f"Venta ID: {vid} | Fecha: {v['fecha']} | Total: ${v['total']} | Estado: {v.get('estado', 'COMPLETADA')}")
-            encontradas = True
-
-    if not encontradas:
-        print("No se encontraron ventas en ese rango de fechas.")
+def consultar_ventas():
+    print("\n--- CONSULTAR VENTAS ---")
+    if not ventas:
+        print("No hay ventas registradas.")
+    else:
+        for vid, v in ventas.items():
+            print(f"Venta ID: {vid} | Fecha: {v['fecha']} | Total: ${v['total']:.2f}")
+            for item in v['items']:
+                print(f"    -> Producto: {item['codigo']} | Cantidad: {item['cantidad']} | Precio U: ${item['precio_unitario']:.2f} | Subtotal: ${item['subtotal']:.2f}")
 
 def alertas_stock():
-    print("\n--- ALERTAS DE STOCK BAJO ---")
+    print("\n--- ALERTAS DE STOCK BAJO (RF12) ---")
+    alerta_encontrada = False
     for cod, p in productos.items():
-        if p['activo'] and calcular_stock(cod) <= p['stock_minimo']:
-            print(f"¡ALERTA! '{p['nombre']}' ({cod}) stock actual: {calcular_stock(cod)} (Mínimo: {p['stock_minimo']})")
+        if p['activo']:
+            stock_actual = calcular_stock(cod)
+            if stock_actual <= p['stock_minimo']:
+                print(f"¡ALERTA! Producto '{p['nombre']}' ({cod}) tiene stock bajo. Actual: {stock_actual} | Mínimo: {p['stock_minimo']}")
+                alerta_encontrada = True
+    if not alerta_encontrada:
+        print("Todos los productos activos tienen niveles de stock óptimos.")
 
 def menu_reportes():
     while True:
         print("\n--- MÓDULO DE REPORTES ---")
         print("1. Reporte de existencias y valor del inventario")
         print("2. Reporte de ventas (Ingresos y unidades)")
-        print("3. Consultar ventas por rango de fechas")
+        print("3. Ranking de los 3 productos más vendidos")
         print("0. Volver al menú principal")
         
         opcion = input("Seleccione una opción: ").strip()
         
         if opcion == "1":
-            valor_total = 0.0
-            for cod, p in productos.items():
-                stock = calcular_stock(cod)
-                val = stock * p['precio']
-                valor_total += val
-                print(f"[{cod}] {p['nombre']} | Stock: {stock} | Valor Venta: ${val}")
-            print(f"Valor total acumulado del inventario: ${valor_total}")
-            
+            print("\n--- REPORTE DE INVENTARIO ---")
+            valor_total_inventario = 0.0
+            if not productos:
+                print("No hay productos.")
+            else:
+                for cod, p in productos.items():
+                    stock = calcular_stock(cod)
+                    valor_inventario = stock * p['precio']
+                    valor_total_inventario += valor_inventario
+                    print(f"[{cod}] {p['nombre']} | Stock: {stock} | Precio Venta: ${p['precio']} | Valor Total: ${valor_inventario}")
+                print(f"\nValor total acumulado del inventario a precio de venta: ${valor_total_inventario} (RF13)")
+                
         elif opcion == "2":
-            ingresos = sum(v['total'] for v in ventas.values())
-            unidades = sum(item['cantidad'] for v in ventas.values() for item in v['items'])
-            print(f"Ventas procesadas: {len(ventas)}")
-            print(f"Unidades totales vendidas: {unidades}")
-            print(f"Ingresos netos acumulados: ${ingresos}")
+            print("\n--- REPORTE DE VENTAS ---")
+            total_ventas_realizadas = len(ventas)
+            unidades_vendidas = 0
+            ingresos_totales = 0.0
+            for v in ventas.values():
+                ingresos_totales += v['total']
+                for item in v['items']:
+                    unidades_vendidas += item['cantidad']
+            print(f"Número total de ventas: {total_ventas_realizadas}")
+            print(f"Unidades totales vendidas: {unidades_vendidas}")
+            print(f"Ingresos totales acumulados: ${ingresos_totales} (RF14)")
             
         elif opcion == "3":
-            consultar_ventas_por_fecha()
-            
+            print("\n--- RANKING: TOP 3 PRODUCTOS MÁS VENDIDOS --- (RF15)")
+            conteo_productos = {}
+            for v in ventas.values():
+                for item in v['items']:
+                    cod = item['codigo']
+                    conteo_productos[cod] = conteo_productos.get(cod, 0) + item['cantidad']
+                    
+            top_productos = sorted(conteo_productos.items(), key=lambda x: x[1], reverse=True)[:3]
+            if not top_productos:
+                print("No hay suficientes datos de ventas para generar el ranking.")
+            else:
+                for i, (cod, cant) in enumerate(top_productos, 1):
+                    nombre_prod = productos[cod]['nombre'] if cod in productos else cod
+                    print(f"{i}. Producto: {nombre_prod} ({cod}) — Cantidad vendida: {cant} unidades")
+                    
         elif opcion == "0":
             break
         else:
             print("Opción inválida.")
-
+            
 def mostrar_menu():
     print("\n==================== AGROCONTROL CBA ====================")
     print("1. Gestión de productos")
     print("2. Gestión de lotes productivos")
     print("3. Movimientos de inventario")
     print("4. Registrar venta")
-    print("5. Alertas de stock")
-    print("6. Reportes")
+    print("5. Consultar ventas")
+    print("6. Alertas de stock")
+    print("7. Reportes")
+    print("8. Guardar datos")
     print("0. Salir")
 
 def main():
     cargar_datos()
+    ejecutando = True
 
-    while True:
+    while ejecutando:
         mostrar_menu()
         opcion = input("Seleccione una opción: ").strip()
 
@@ -464,15 +567,19 @@ def main():
         elif opcion == "4":
             registrar_venta()
         elif opcion == "5":
-            alertas_stock()
+            consultar_ventas()
         elif opcion == "6":
+            alertas_stock()
+        elif opcion == "7":
             menu_reportes()
+        elif opcion == "8":
+            guardar_datos()
         elif opcion == "0":
             guardar_datos()
             print("\nSaliendo del Sistema AgroControl CBA. ¡Hasta luego!")
-            break
+            ejecutando = False
         else:
-            print("Opción inválida.")
+            print("Opción inválida. Intente de nuevo (RF18).")
 
 if __name__ == "__main__":
     main()
