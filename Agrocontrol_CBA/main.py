@@ -521,3 +521,49 @@ def menu_reportes():
             break
         else:
             print(Fore.RED + "Opción inválida.")
+            
+def mostrar_menu():
+    print(Fore.GREEN + Style.BRIGHT + "\n==================== AGROCONTROL CBA ====================" + Style.RESET_ALL)
+    print("1. Gestión de productos")
+    print("2. Gestión de lotes productivos")
+    print("3. Movimientos de inventario")
+    print("4. Registrar venta")
+    print("5. Consultar ventas")
+    print("6. Alertas de stock")
+    print("7. Reportes")
+    print("8. Guardar datos")
+    print("0. Salir")
+
+def main():
+    cargar_datos()
+    ejecutando = True
+
+    while ejecutando:
+        mostrar_menu()
+        opcion = input("Seleccione una opción: ").strip()
+
+        if opcion == "1":
+            menu_gestion_productos()
+        elif opcion == "2":
+            menu_gestion_lotes()
+        elif opcion == "3":
+            menu_movimientos_inventario()
+        elif opcion == "4":
+            registrar_venta()
+        elif opcion == "5":
+            consultar_ventas()
+        elif opcion == "6":
+            alertas_stock()
+        elif opcion == "7":
+            menu_reportes()
+        elif opcion == "8":
+            guardar_datos()
+        elif opcion == "0":
+            guardar_datos()
+            print(Fore.GREEN + "\nSaliendo del Sistema AgroControl CBA. ¡Hasta luego!")
+            ejecutando = False
+        else:
+            print(Fore.RED + "Opción inválida. Intente de nuevo (RF18).")
+
+if __name__ == "__main__":
+    main()
