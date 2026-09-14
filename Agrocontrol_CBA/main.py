@@ -375,3 +375,81 @@ def menu_movimientos_inventario():
             break
         else:
             print(Fore.RED + "Opción inválida.")
+def registrar_venta():
+    print(Fore.CYAN + "\n--- REGISTRAR VENTA ---")
+    items_venta = []
+    total_venta = 0.0
+    
+    while True:
+        prod_cod = input("Ingrese el código del producto a vender (o escriba 'fin' para terminar): ").strip().upper()
+        if prod_cod == 'FIN':
+            break
+            
+        if prod_cod not in productos or not productos[prod_cod]['activo']:
+            print(Fore.RED + "El producto no existe o está inactivo.")
+            continue
+            
+        try:
+            cantidad = int(input(f"Cantidad de '{productos[prod_cod]['nombre']}': "))
+            if cantidad <= 0:
+                print(Fore.RED + "La cantidad debe ser mayor a 0.")
+                continue
+                
+            # Validar stock suficiente (RF10, Regla 4)
+            stock_actual = calcular_stock(prod_cod)
+            if stock_actual < cantidad:
+                print(Fore.RED + f"Stock insuficiente. Stock disponible: {stock_actual} (PF005).")
+                continue
+                
+            precio_unitario = productos[prod_cod]['precio'] # Regla 7
+            subtotal = precio_unitario * cantidad
+            
+            items_venta.append({
+                "codigo": prod_cod,
+                "cantidad": cantidad,
+                "precio_unitario": precio_unitario
+            })
+            total_venta += subtotal
+            print(Fore.GREEN + f"Ítem agregado. Subtotal: ${subtotal}")
+        except ValueError:
+            print(Fore.RED + "Ingrese una cantidad numérica válida.")
+            
+    if not items_venta:
+        print(Fore.YELLOW + "La venta fue cancelada (debe contener al menos un ítem - Regla 6).")
+        return
+        
+    # Registrar la venta y descontar inventario mediante movimientos de salida (RF10)
+    v_id = generar_id_venta()
+    fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M")
+    
+    ventas[v_id] = {
+        "id": v_id,
+        "fecha": fecha_actual,
+        "items": items_venta,
+        "total": total_venta
+    }
+    
+    # Generar movimientos de salida automáticos asociados a la venta
+    for item in items_venta:
+        m_id = generar_id_movimiento()
+        movimientos[m_id] = {
+            "id": m_id,
+            "producto_codigo": item['codigo'],
+            "tipo": "SALIDA",
+            "cantidad": item['cantidad'],
+            "motivo": f"Venta {v_id}",
+            "fecha": fecha_actual
+        }
+        
+    guardar_datos()
+    print(Fore.GREEN + f"\n¡Venta {v_id} registrada con éxito! Total a pagar: ${total_venta} (RF11, PF006, PF007).")
+
+def consultar_ventas():
+    print(Fore.CYAN + "\n--- CONSULTAR VENTAS ---")
+    if not ventas:
+        print("No hay ventas registradas.")
+    else:
+        for vid, v in ventas.items():
+            print(f"Venta ID: {vid} | Fecha: {v['fecha']} | Total: ${v['total']}")
+            for item in v['items']:
+                print(f"   -> Producto: {item['codigo']} | Cantidad: {item['cantidad']} | Precio U: ${item['precio_unitario']}")
