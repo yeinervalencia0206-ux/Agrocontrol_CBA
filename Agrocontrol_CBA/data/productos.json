@@ -1,0 +1,11 @@
+{
+    "P001": {
+        "codigo": "P001",
+        "nombre": "carne",
+        "categoria": "carnico",
+        "unidad": "34KG",
+        "precio": 20000.0,
+        "stock_minimo": 2,
+        "activo": true
+    }
+}
