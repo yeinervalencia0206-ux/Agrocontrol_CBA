@@ -62,9 +62,9 @@ Como Ejecutar
 
 Requisitos: Python 3.8 o superior. No necesita instalar librerias externas.
 
-1. Guarda el codigo como http://main.py
+1. Guarda el codigo como main.py
 2. Abre la terminal en esa carpeta
-3. Ejecuta: python http://main.py
+3. Ejecuta: python main.py
 
 El sistema creara automaticamente la carpeta data/ y los archivos JSON con manejo seguro para archivos vacios.
 
