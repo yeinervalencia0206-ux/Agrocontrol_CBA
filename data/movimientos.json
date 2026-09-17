@@ -1,0 +1,18 @@
+{
+    "M0001": {
+        "id": "M0001",
+        "producto_codigo": "P012",
+        "tipo": "ENTRADA",
+        "cantidad": 50,
+        "motivo": "Stock inicial de registro",
+        "fecha": "2026-09-14 16:34"
+    },
+    "M0002": {
+        "id": "M0002",
+        "producto_codigo": "P013",
+        "tipo": "ENTRADA",
+        "cantidad": 5,
+        "motivo": "Stock inicial de registro",
+        "fecha": "2026-09-14 16:36"
+    }
+}
