@@ -24,7 +24,7 @@ proyecto/
     ├── lotes.json
     ├── movimientos.json
     └── ventas.json
----
+``````
 Modulos del Sistema
 
 1. Gestion de Productos
