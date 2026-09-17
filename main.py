@@ -10,6 +10,7 @@ DATA_DIR.mkdir(exist_ok=True)
 FILE_PRODUCTOS = DATA_DIR / "productos.json"
 FILE_LOTES = DATA_DIR / "lotes.json"
 FILE_MOVIMIENTOS = DATA_DIR / "movimientos.json"
+
 FILE_VENTAS = DATA_DIR / "ventas.json"
 
 # Estructuras de datos en memoria
